@@ -3,6 +3,7 @@ package handler
 import (
 	"cloudstorage/meta"
 	"cloudstorage/util"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -58,4 +59,17 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 // 上传已完成
 func UploadSucHandler(w http.ResponseWriter, r *http.Request) {
 	io.WriteString(w, "Upload finish")
+}
+
+// 获取文件信息
+func GetFileMetahandler(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	filehash := r.Form["filehash"][0]
+	fMeta := meta.GetFileMeta(filehash)
+	data, err := json.Marshal(fMeta)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.Write(data)
 }
