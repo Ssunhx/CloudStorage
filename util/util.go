@@ -16,7 +16,7 @@ type ShalStream struct {
 
 func (obj *ShalStream) Update(data []byte) {
 	if obj._shal == nil {
-		//obj._shal = sha
+		obj._shal = sha1.New()
 	}
 	obj._shal.Write(data)
 }

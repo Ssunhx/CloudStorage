@@ -73,3 +73,28 @@ func GetFileMetahandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Write(data)
 }
+
+// 文件下载
+func DownloadHandler(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	filehash := r.Form.Get("filehash")
+
+	filemeta := meta.GetFileMeta(filehash)
+	fmt.Println(filemeta)
+	f, err := os.Open(filemeta.Location)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer f.Close()
+
+	data, err := ioutil.ReadAll(f)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/octect-stream")
+	// attachment 表示文件会提示下载到本地，而不是直接在浏览器中打开
+	w.Header().Set("content-disposition", "attachment; filename=\""+filemeta.FileName+"\"")
+	w.Write(data)
+}
