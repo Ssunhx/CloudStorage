@@ -98,3 +98,48 @@ func DownloadHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("content-disposition", "attachment; filename=\""+filemeta.FileName+"\"")
 	w.Write(data)
 }
+
+// 文件修改
+func FileMetaUpdateHandler(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+
+	opType := r.Form.Get("op")
+	fileShal := r.Form.Get("filehash")
+	newFileName := r.Form.Get("filename")
+
+	// 只有 0 才可以修改
+	if opType != "0" {
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+	// 只能是 POST 请求
+	if r.Method != "POST" {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	// 修改名字
+	curFileMeta := meta.GetFileMeta(fileShal)
+	curFileMeta.FileName = newFileName
+	meta.UpdateFileMeta(curFileMeta)
+
+	data, err := json.Marshal(curFileMeta)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	// 返回数据
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
+}
+
+func FileDeleteHandler(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+
+	fileShal := r.Form.Get("filehash")
+	// 删除磁盘文件
+	fMeta := meta.GetFileMeta(fileShal)
+	os.Remove(fMeta.Location)
+	// 在 dict 中删除
+	meta.RemoveFileMeta(fileShal)
+	w.WriteHeader(http.StatusOK)
+}
