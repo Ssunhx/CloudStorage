@@ -25,3 +25,42 @@ func UserSignUp(username string, password string) bool {
 	// 用户名已经被注册
 	return false
 }
+
+func UserSignin(username string, encpwd string) bool {
+	stmt, err := mysql.DB.Prepare("select * from tbl_user where user_name=? limit 1")
+	if err != nil {
+		fmt.Println(err.Error())
+		return false
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.Query(username)
+	if err != nil {
+		fmt.Println(err.Error())
+		return false
+	} else if rows == nil {
+		return false
+	}
+	pRows := mysql.ParseRows(rows)
+	if len(pRows) > 0 && string(pRows[0]["user_pwd"].([]byte)) == encpwd {
+		return true
+	}
+	return false
+}
+
+// 更新用户 token
+func UpdateToken(username string, token string) bool {
+	stmt, err := mysql.DB.Prepare("replace into tbl_user_token(`user_name`, `user_token`) value (?, ?)")
+	if err != nil {
+		fmt.Println(err.Error())
+		return false
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(username, token)
+	if err != nil {
+		fmt.Println(err.Error())
+		return false
+	}
+	return true
+}

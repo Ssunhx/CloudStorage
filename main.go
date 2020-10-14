@@ -7,6 +7,8 @@ import (
 )
 
 func main() {
+	http.Handle("/static/",
+		http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
 	// 文件上传
 	http.HandleFunc("/file/upload", handler.UploadHandler)
 	// 上传成功
@@ -21,6 +23,8 @@ func main() {
 	http.HandleFunc("/file/delete", handler.FileDeleteHandler)
 	// 注册
 	http.HandleFunc("/user/signup", handler.SignUPHandler)
+
+	http.HandleFunc("/user/signin", handler.SignInHandler)
 	err := http.ListenAndServe(":9234", nil)
 	if err != nil {
 		fmt.Println("failed start server")
