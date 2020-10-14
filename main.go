@@ -19,6 +19,8 @@ func main() {
 	http.HandleFunc("/file/update", handler.FileMetaUpdateHandler)
 	// 文件删除
 	http.HandleFunc("/file/delete", handler.FileDeleteHandler)
+	// 注册
+	http.HandleFunc("/user/signup", handler.SignUPHandler)
 	err := http.ListenAndServe(":9234", nil)
 	if err != nil {
 		fmt.Println("failed start server")
