@@ -23,8 +23,10 @@ func main() {
 	http.HandleFunc("/file/delete", handler.FileDeleteHandler)
 	// 注册
 	http.HandleFunc("/user/signup", handler.SignUPHandler)
-
+	// 用户登录
 	http.HandleFunc("/user/signin", handler.SignInHandler)
+	// 用户信息
+	http.HandleFunc("/user/info", handler.UserInfoHandler)
 	err := http.ListenAndServe(":9234", nil)
 	if err != nil {
 		fmt.Println("failed start server")

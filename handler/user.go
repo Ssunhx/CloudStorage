@@ -90,9 +90,45 @@ func SignInHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(resp.JSONBytes())
 }
 
+// 获取用户信息
+func UserInfoHandler(w http.ResponseWriter, r *http.Request) {
+	// 1、解析参数
+	r.ParseForm()
+	username := r.Form.Get("username")
+	token := r.Form.Get("token")
+	// 2、验证token
+	isValid := IsTokenValid(token)
+	if !isValid {
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+	// 3、查询用户信息
+	user, err := db.GetUserInfo(username)
+	if err != nil {
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+	// 4、组装响应用户数据
+	resp := util.RespMsg{
+		Code: 0,
+		Msg:  "OK",
+		Data: user,
+	}
+	w.Write(resp.JSONBytes())
+}
+
+// 生成 token
 func GenToken(username string) string {
 	// md5(username + timestamp + token_salt )+ tamestamp[:8]
 	ts := fmt.Sprintf("%x", time.Now().Unix())
 	token_Prefix := util.MD5([]byte(username + "_token_salt"))
 	return token_Prefix + ts[:8]
+}
+
+// 验证 token 是否有效
+func IsTokenValid(token string) bool {
+	// token 是否过期
+	// 数据库查询 token 是否存在
+	// 对比 token 是否一致
+	return true
 }
