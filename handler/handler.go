@@ -50,7 +50,8 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		// 生成文件 hash
 		newFile.Seek(0, 0)
 		fileMeta.FileShal = util.FileShal(newFile)
-		meta.UpdateFileMeta(fileMeta)
+		//meta.UpdateFileMeta(fileMeta)
+		_ = meta.UpdateFileMetaDB(fileMeta)
 
 		http.Redirect(w, r, "/file/upload/suc", http.StatusFound)
 	}
@@ -65,7 +66,13 @@ func UploadSucHandler(w http.ResponseWriter, r *http.Request) {
 func GetFileMetahandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	filehash := r.Form["filehash"][0]
-	fMeta := meta.GetFileMeta(filehash)
+	//fMeta := meta.GetFileMeta(filehash)
+
+	fMeta, err := meta.GetFileMetaDB(filehash)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 	data, err := json.Marshal(fMeta)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -120,7 +127,8 @@ func FileMetaUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	// 修改名字
 	curFileMeta := meta.GetFileMeta(fileShal)
 	curFileMeta.FileName = newFileName
-	meta.UpdateFileMeta(curFileMeta)
+	//meta.UpdateFileMeta(curFileMeta)
+	_ = meta.UpdateFileMetaDB(curFileMeta)
 
 	data, err := json.Marshal(curFileMeta)
 	if err != nil {
