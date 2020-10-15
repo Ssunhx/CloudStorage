@@ -21,6 +21,8 @@ func main() {
 	http.HandleFunc("/file/update", handler.FileMetaUpdateHandler)
 	// 文件删除
 	http.HandleFunc("/file/delete", handler.FileDeleteHandler)
+	// 文件查询
+	http.HandleFunc("/file/query", handler.FileQueryhandler)
 	// 注册
 	http.HandleFunc("/user/signup", handler.SignUPHandler)
 	// 用户登录
