@@ -28,7 +28,7 @@ func main() {
 	// 用户登录
 	http.HandleFunc("/user/signin", handler.SignInHandler)
 	// 用户信息
-	http.HandleFunc("/user/info", handler.UserInfoHandler)
+	http.HandleFunc("/user/info", handler.HTTPInterceptor(handler.UserInfoHandler))
 	err := http.ListenAndServe(":9234", nil)
 	if err != nil {
 		fmt.Println("failed start server")

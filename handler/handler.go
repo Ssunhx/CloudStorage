@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"cloudstorage/db"
 	"cloudstorage/meta"
 	"cloudstorage/util"
 	"encoding/json"
@@ -9,6 +10,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -52,8 +54,15 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		fileMeta.FileShal = util.FileShal(newFile)
 		//meta.UpdateFileMeta(fileMeta)
 		_ = meta.UpdateFileMetaDB(fileMeta)
-
-		http.Redirect(w, r, "/file/upload/suc", http.StatusFound)
+		r.ParseForm()
+		username := r.Form.Get("username")
+		suc := db.OnUserfileUploadFinished(username, fileMeta.FileShal, fileMeta.FileName, fileMeta.FileSize)
+		if suc {
+			http.Redirect(w, r, "/static/view/home.html", http.StatusFound)
+		} else {
+			w.Write([]byte("Upload failed"))
+		}
+		//http.Redirect(w, r, "/file/upload/suc", http.StatusFound)
 	}
 }
 
