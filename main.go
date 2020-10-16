@@ -23,6 +23,12 @@ func main() {
 	http.HandleFunc("/file/delete", handler.FileDeleteHandler)
 	// 文件查询
 	http.HandleFunc("/file/query", handler.FileQueryhandler)
+
+	// 分块上传
+	http.HandleFunc("/file/mpupload/init", handler.HTTPInterceptor(handler.InitialmultipartUploadHandler))
+	http.HandleFunc("/file/mpupload/uppart", handler.HTTPInterceptor(handler.UploadPartHandler))
+	http.HandleFunc("/file/mpupload/complate", handler.HTTPInterceptor(handler.ComplateUploadHandler))
+
 	// 注册
 	http.HandleFunc("/user/signup", handler.SignUPHandler)
 	// 用户登录
