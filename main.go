@@ -29,6 +29,9 @@ func main() {
 	http.HandleFunc("/user/signin", handler.SignInHandler)
 	// 用户信息
 	http.HandleFunc("/user/info", handler.HTTPInterceptor(handler.UserInfoHandler))
+	// 秒传
+	http.HandleFunc("/file/fastupload", handler.TryFastUploadhandler)
+
 	err := http.ListenAndServe(":9234", nil)
 	if err != nil {
 		fmt.Println("failed start server")
