@@ -38,6 +38,9 @@ func main() {
 	// 秒传
 	http.HandleFunc("/file/fastupload", handler.TryFastUploadhandler)
 
+	// oss download
+	http.HandleFunc("/file/downloadurl", handler.HTTPInterceptor(handler.OSSDownloadURLHandler))
+
 	err := http.ListenAndServe(":9234", nil)
 	if err != nil {
 		fmt.Println("failed start server")

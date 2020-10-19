@@ -3,11 +3,10 @@ package handler
 import (
 	"cloudstorage/db"
 	"cloudstorage/meta"
-	"cloudstorage/store/ceph"
+	"cloudstorage/store/oss"
 	"cloudstorage/util"
 	"encoding/json"
 	"fmt"
-	"gopkg.in/amz.v1/s3"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -57,12 +56,22 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		//meta.UpdateFileMeta(fileMeta)
 
 		// 写入 ceph
-		newFile.Seek(0, 0)
-		data, _ := ioutil.ReadAll(newFile)
-		bucket := ceph.GetCephBucket("userfile")
-		cephPath := "/ceph/" + fileMeta.FileShal
-		_ = bucket.Put(cephPath, data, "object-stream", s3.PublicRead)
-		fileMeta.Location = cephPath
+		//newFile.Seek(0, 0)
+		//data, _ := ioutil.ReadAll(newFile)
+		//bucket := ceph.GetCephBucket("userfile")
+		//cephPath := "/ceph/" + fileMeta.FileShal
+		//_ = bucket.Put(cephPath, data, "object-stream", s3.PublicRead)
+		//fileMeta.Location = cephPath
+
+		// oss 存储
+		// oss 路径中不能以 / 开头
+		osspath := "oss/" + fileMeta.FileShal
+		err = oss.Bucket().PutObject(osspath, newFile)
+		if err != nil {
+			fmt.Println(err.Error())
+			w.Write([]byte("upload oss failed"))
+		}
+		fileMeta.Location = osspath
 
 		_ = meta.UpdateFileMetaDB(fileMeta)
 		r.ParseForm()
@@ -240,4 +249,16 @@ func TryFastUploadhandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Write(resp.JSONBytes())
 	return
+}
+
+// oss 文件下载
+func OSSDownloadURLHandler(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	filehash := r.Form.Get("filehash")
+
+	row, _ := db.GetFileMeta(filehash)
+
+	signedURL := oss.DownloadURL(row.FileAddr.String)
+
+	w.Write([]byte(signedURL))
 }
