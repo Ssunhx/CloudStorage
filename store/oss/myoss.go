@@ -2,7 +2,6 @@ package oss
 
 import (
 	"cloudstorage/config"
-	"database/sql"
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
@@ -39,4 +38,12 @@ func DownloadURL(objName string) string {
 		return ""
 	}
 	return signedURL
+}
+
+// oss 设定bucket生命周期
+func BuildLifecycleRule(bucketName string) {
+	reluTest1 := oss.BuildLifecycleRuleByDays("rule1", "test/", true, 30)
+	rules := []oss.LifecycleRule{reluTest1}
+
+	Client().SetBucketLifecycle(bucketName, rules)
 }
