@@ -3,9 +3,11 @@ package handler
 import (
 	"cloudstorage/db"
 	"cloudstorage/meta"
+	"cloudstorage/store/ceph"
 	"cloudstorage/util"
 	"encoding/json"
 	"fmt"
+	"gopkg.in/amz.v1/s3"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -53,6 +55,15 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		newFile.Seek(0, 0)
 		fileMeta.FileShal = util.FileShal(newFile)
 		//meta.UpdateFileMeta(fileMeta)
+
+		// 写入 ceph
+		newFile.Seek(0, 0)
+		data, _ := ioutil.ReadAll(newFile)
+		bucket := ceph.GetCephBucket("userfile")
+		cephPath := "/ceph/" + fileMeta.FileShal
+		_ = bucket.Put(cephPath, data, "object-stream", s3.PublicRead)
+		fileMeta.Location = cephPath
+
 		_ = meta.UpdateFileMetaDB(fileMeta)
 		r.ParseForm()
 		username := r.Form.Get("username")
