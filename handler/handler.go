@@ -1,8 +1,12 @@
 package handler
 
 import (
+	"cloudstorage/common"
+	"cloudstorage/config"
 	"cloudstorage/db"
 	"cloudstorage/meta"
+	"cloudstorage/mq"
+	myceph "cloudstorage/store/ceph"
 	"cloudstorage/store/oss"
 	"cloudstorage/util"
 	"encoding/json"
@@ -55,23 +59,48 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		fileMeta.FileShal = util.FileShal(newFile)
 		//meta.UpdateFileMeta(fileMeta)
 
-		// 写入 ceph
-		//newFile.Seek(0, 0)
-		//data, _ := ioutil.ReadAll(newFile)
-		//bucket := ceph.GetCephBucket("userfile")
-		//cephPath := "/ceph/" + fileMeta.FileShal
-		//_ = bucket.Put(cephPath, data, "object-stream", s3.PublicRead)
-		//fileMeta.Location = cephPath
+		// 油表重新回到文件头部
+		newFile.Seek(0, 0)
 
-		// oss 存储
-		// oss 路径中不能以 / 开头
-		osspath := "oss/" + fileMeta.FileShal
-		err = oss.Bucket().PutObject(osspath, newFile)
-		if err != nil {
-			fmt.Println(err.Error())
-			w.Write([]byte("upload oss failed"))
+		if config.CurrentStoreType == common.StoreCeph {
+			// 文件写入 ceph
+			data, _ := ioutil.ReadAll(newFile)
+			cephPath := "/ceph/" + fileMeta.FileShal
+			_ = myceph.Putobject("userfile", cephPath, data)
+			fileMeta.Location = cephPath
+		} else if config.CurrentStoreType == common.StoreOSS {
+			// 文件写入 OSS
+			// oss 路径中不能以 / 开头
+			osspath := "oss/" + fileMeta.FileShal
+			// 判断是同步写入还是异步写入
+
+			if !config.AsyncTransferEnable {
+				// 同步写入
+				err = oss.Bucket().PutObject(osspath, newFile)
+				if err != nil {
+					fmt.Println(err.Error())
+					w.Write([]byte("upload oss failed"))
+					return
+				}
+				fileMeta.Location = osspath
+			} else {
+				// 异步写入
+				data := mq.TransferData{
+					FileHash:      fileMeta.FileShal,
+					CurLocation:   fileMeta.Location,
+					DestLocation:  osspath,
+					DestStoreType: common.StoreOSS,
+				}
+				pubData, _ := json.Marshal(data)
+				pubSuc := mq.Publish(
+					config.TransExchangeName,
+					config.TransOSSRoutingKey,
+					pubData)
+				if !pubSuc {
+					// TODO 消息发送失败，稍后重试
+				}
+			}
 		}
-		fileMeta.Location = osspath
 
 		_ = meta.UpdateFileMetaDB(fileMeta)
 		r.ParseForm()
