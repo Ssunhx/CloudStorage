@@ -57,3 +57,25 @@ func GetFileMeta(filehash string) (*TableFile, error) {
 	}
 	return &tfile, nil
 }
+
+// 更新文件的路径
+func UpdateFileLocation(filehash string, fileaddr string) bool {
+	stmt, err := mydb.DB.Prepare("update tbl_file set`file_addr`=? where  `file_sha1`=? limit 1")
+	if err != nil {
+		return false
+	}
+	defer stmt.Close()
+
+	ret, err := stmt.Exec(fileaddr, filehash)
+	if err != nil {
+		return false
+	}
+
+	if rf, err := ret.RowsAffected(); err == nil {
+		if rf <= 0 {
+			fmt.Println("update filepath failed, filehash : %s", filehash)
+		}
+		return true
+	}
+	return false
+}
